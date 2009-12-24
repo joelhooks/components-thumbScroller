@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="85" height="85" xmlns:local="*" xmlns:display="com.joelhooks.display.*">
+	<mx:Script>
+		<![CDATA[
+			[Bindable]
+			private var url:String;
+			
+			override public function set data(value:Object):void
+			{
+				super.data=value;
+				if(value is XML)
+					url = data.@name;
+				else
+					url = "";
+			}
+		]]>
+	</mx:Script>
+	<display:SmoothImage width="100%" height="100%" source="{'assets/images/' + url + '_s.jpg'}"/>
+</mx:Canvas>

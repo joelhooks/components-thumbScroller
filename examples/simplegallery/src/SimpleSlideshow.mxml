@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+				layout="absolute"
+				width="450"
+				height="600"
+				backgroundColor="#FFFFFF"
+				xmlns:gallery="com.visualempathy.display.controls.gallery.*"
+				xmlns:local="*"
+				xmlns:display="com.joelhooks.display.*" creationComplete="application1_creationCompleteHandler(event)">
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.XMLListCollection;
+			import mx.events.FlexEvent;
+
+			protected var xml:XML=<images>
+					<image name="3355226494_07dab9ba54"/>
+					<image name="3792349339_00000ffb7a"/>
+					<image name="3355957414_bfc397beb4"/>
+					<image name="3793129323_9defc51d63"/>
+					<image name="3355136923_3cbe01c482"/>
+					<image name="3355221976_f13d8e95dc"/>
+					<image name="3354402351_cf6797c126"/>
+					<image name="3793984180_22a64b96d5"/>
+					<image name="3857050268_1e7037cb0e"/>
+					<image name="3793975106_96ed4211d2"/>
+					<image name="3735191063_6b55d6010d"/>
+					<image name="3453670271_3cd0f7458b"/>
+				</images>;
+
+			[Bindable]
+			private var dp:XMLListCollection=new XMLListCollection(XMLList(xml.image));
+
+			protected function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var cm:ContextMenu = application.contextMenu.clone();
+				var joel:ContextMenuItem = new ContextMenuItem("http://joelhooks.com");
+				cm.hideBuiltInItems();
+				joel.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, joel_select)
+				cm.customItems.push(joel);
+				application.contextMenu = cm;
+			}
+			
+			private function joel_select(event:ContextMenuEvent):void
+			{
+				navigateToURL(new URLRequest("http://joelhooks.com"), "_blank");
+			}
+
+		]]>
+	</mx:Script>
+	<mx:Box>
+		<mx:Label text="Simple Image Gallery Example" fontFamily="Arial" color="#000000" fontSize="18" fontWeight="bold"/>
+	</mx:Box>
+	<display:ImageSwap height="100%"
+					   width="100%"
+					   source="{'assets/images/' + (scroller.selectedItem ? scroller.selectedItem.@name : null) + '.jpg'}"/>
+	<gallery:ThumbScroller id="scroller"
+						   width="100%"
+						   height="85"
+						   bottom="0"
+						   itemRenderer="ThumbRenderer"
+						   dataProvider="{dp}"/>
+</mx:Application>
