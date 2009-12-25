@@ -40,6 +40,9 @@ package com.visualempathy.display.controls.gallery
 
 	use namespace mx_internal;
 	
+	/**
+	 * Dispatched when a thumb is selected delivering the data content of the thumb. 
+	 */	
 	[Event(name="thumbSelected", type="com.visualempathy.display.controls.gallery.events.ThumbScrollerEvent")]
 
 	/**
@@ -118,6 +121,12 @@ package com.visualempathy.display.controls.gallery
 		private var _canSelectWhileAnimating:Boolean;
 
 		[Inspectable(category="General")]
+		/**
+		 * If false a user cannot select another thumb until the current 
+		 * thumbnail reaches its final resting position (the center). 
+		 * @return 
+		 * 
+		 */		
 		public function get canSelectWhileAnimating():Boolean
 		{
 			return _canSelectWhileAnimating;
@@ -136,6 +145,11 @@ package com.visualempathy.display.controls.gallery
 		private var _thumbHeight:Number;
 
 		[Inspectable(category="General")]
+		/**
+		 * Explicit height of thumbnail objects. 
+		 * @return 
+		 * 
+		 */		
 		public function get thumbHeight():Number
 		{
 			return _thumbHeight;
@@ -169,6 +183,11 @@ package com.visualempathy.display.controls.gallery
 		private var _thumbWidth:Number;
 
 		[Inspectable(category="General")]
+		/**
+		 * Explicit width of thumbnail objects 
+		 * @return 
+		 * 
+		 */		
 		public function get thumbWidth():Number
 		{
 			return _thumbWidth;
@@ -200,7 +219,12 @@ package com.visualempathy.display.controls.gallery
 		//----------------------------------
 
 		private var _selectionLayer:FlexSprite;
-
+		
+		/**
+		 * The underlying selection area to receive component mouse clicks
+		 * @return 
+		 * @private
+		 */
 		public function get selectionLayer():FlexSprite
 		{
 			return _selectionLayer;
@@ -221,6 +245,11 @@ package com.visualempathy.display.controls.gallery
 		[Bindable("change")]
 		[Bindable("valueCommit")]
 		[Inspectable(category="General", defaultValue="null")]
+		/**
+		 * The data of the currently selected thumbnail 
+		 * @return 
+		 * 
+		 */		
 		public function get selectedItem():Object
 		{
 			return _selectedItem;
@@ -249,7 +278,8 @@ package com.visualempathy.display.controls.gallery
 
 		[Inspectable(category="General", enumeration="0,3,5,7,9", defaultValue="3")]
 		/**
-		 *
+		 * Damping is the ease in of the animation effect applied to thumbnails as
+		 * a selected thumbnail moves to the selected position.
 		 * @return
 		 *
 		 */
@@ -277,6 +307,11 @@ package com.visualempathy.display.controls.gallery
 		protected var rendererChanged:Boolean=false;
 
 		[Inspectable(category="Data")]
+		/**
+		 * The renderer used to display the thumbnail items underlying data. 
+		 * @return 
+		 * 
+		 */		
 		public function get itemRenderer():IFactory
 		{
 			return _itemRenderer;
@@ -330,6 +365,11 @@ package com.visualempathy.display.controls.gallery
 		protected var collection:ICollectionView;
 
 		[Inspectable(category="Data")]
+		/**
+		 * The underlying data of the component. Generally a collection of objects. 
+		 * @return 
+		 * 
+		 */		
 		public function get dataProvider():Object
 		{
 			return collection;
@@ -486,7 +526,7 @@ package com.visualempathy.display.controls.gallery
 				selectedThumbTargetPositionX=(collection.length * thumbWidth) / 2;
 		}
 
-		private function adjustMask(unscaledWidth:Number, unscaledHeight:Number):void
+		protected function adjustMask(unscaledWidth:Number, unscaledHeight:Number):void
 		{
 			var mask:DisplayObject=maskShape;
 			mask.width=unscaledWidth;
