@@ -1,3 +1,8 @@
+/**
+ * Created by Joel Hooks | joelhooks@gmail.com 
+ * Feel free to use this however you like, but leave this comment intact. 
+ * http://creativecommons.org/licenses/by/3.0/
+ */
 package com.visualempathy.display.controls.gallery
 {
 	import flash.display.DisplayObject;
@@ -6,7 +11,7 @@ package com.visualempathy.display.controls.gallery
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.utils.Dictionary;
-	
+
 	import mx.collections.ArrayCollection;
 	import mx.collections.CursorBookmark;
 	import mx.collections.ICollectionView;
@@ -33,43 +38,44 @@ package com.visualempathy.display.controls.gallery
 	import mx.events.FlexEvent;
 
 	use namespace mx_internal;
-	
+
 	/**
 	 * This is a continuous (infinite) thumbnail scroller.
 	 * Borrowing heavily from the standard Flex 3 List, it performs
 	 * in a similar manner. An item renderer should be provided
 	 * to display your content appropriatly.
-	 * 
+	 *
 	 * <p>The dataProvider is set once, the component does not detect changes
-	 * to the dataProvider after it is initially set. This is a product of how the 
+	 * to the dataProvider after it is initially set. This is a product of how the
 	 * component functions in rendering with the reordering of the actual display
 	 * to achieve the "infinite" effect.</p>
-	 *  
-	 * Based on the work of Peter Wright:
+	 *
+	 * Animation and 'swapping' based on the work of Peter Wright:
 	 * http://www.f-90.co.uk/blog/
-	 * 
+	 *
 	 * @author Joel Hooks joelhooks[at]gmail[dot]com
-	 * 
-	 */	
+	 *
+	 */
 	public class ThumbScroller extends UIComponent
 	{
-		protected var centerX:Number
-		protected var selectedThumb:Object;
+		[ArrayElementType("mx.controls.listClasses.IListItemRenderer")]
 		protected var thumbRenderers:Array;
+		
+		protected var selectedThumbTargetPositionX:Number
+		protected var selectedThumb:Object;
 		protected var thumbContent:ThumbContentHolder;
 		protected var maskShape:Shape;
 		protected var measuringObjects:Dictionary;
-		protected var itemsNeedMeasurement:Boolean=true;
 		protected var explicitThumbHeight:Number;
 		protected var explicitThumbWidth:Number;
-		protected var thumbsInitialized:Boolean;
+		protected var itemsNeedMeasurement:Boolean=true;
 		protected var thumbsNeedPositioning:Boolean;
 		protected var currentlyAnimating:Boolean;
-	
+
 		//----------------------------------
 		//  selectionEnabled
 		//----------------------------------
-		
+
 		private var _selectionEnabled:Boolean;
 
 		[Inspectable(category="General")]
@@ -80,14 +86,14 @@ package com.visualempathy.display.controls.gallery
 
 		public function set selectionEnabled(value:Boolean):void
 		{
-			_selectionEnabled = value;
+			_selectionEnabled=value;
 		}
 
 
 		//----------------------------------
 		//  canSelectWhileAnimating
 		//----------------------------------
-		
+
 		private var _canSelectWhileAnimating:Boolean;
 
 		[Inspectable(category="General")]
@@ -98,14 +104,14 @@ package com.visualempathy.display.controls.gallery
 
 		public function set canSelectWhileAnimating(value:Boolean):void
 		{
-			_canSelectWhileAnimating = value;
+			_canSelectWhileAnimating=value;
 		}
 
 
 		//----------------------------------
 		//  thumbHeight
 		//----------------------------------
-		
+
 		private var _thumbHeight:Number;
 
 		[Inspectable(category="General")]
@@ -138,10 +144,8 @@ package com.visualempathy.display.controls.gallery
 		//----------------------------------
 		//  thumbWidth
 		//----------------------------------
-		
-		private var _thumbWidth:Number;
 
-		private var thumbWidthChanged:Boolean=false;
+		private var _thumbWidth:Number;
 
 		[Inspectable(category="General")]
 		public function get thumbWidth():Number
@@ -164,7 +168,7 @@ package com.visualempathy.display.controls.gallery
 				dispatchEvent(new Event("thumbWidthChanged"));
 			}
 		}
-		
+
 		protected function setThumbWidth(value:Number):void
 		{
 			_thumbWidth=value;
@@ -173,7 +177,7 @@ package com.visualempathy.display.controls.gallery
 		//----------------------------------
 		//  selectionLayer
 		//----------------------------------
-		
+
 		private var _selectionLayer:FlexSprite;
 
 		public function get selectionLayer():FlexSprite
@@ -189,10 +193,10 @@ package com.visualempathy.display.controls.gallery
 		//----------------------------------
 		//  selectedItem
 		//----------------------------------
-		
+
 		private var _selectedItem:Object
-		private var selectedItemChanged:Boolean = false;
-		
+		private var selectedItemChanged:Boolean=false;
+
 		[Bindable("change")]
 		[Bindable("valueCommit")]
 		[Inspectable(category="General", defaultValue="null")]
@@ -205,28 +209,28 @@ package com.visualempathy.display.controls.gallery
 		{
 			if (!collection || collection.length == 0)
 			{
-				_selectedItem = data;
-				selectedItemChanged = true;
-				
+				_selectedItem=data;
+				selectedItemChanged=true;
+
 				invalidateDisplayList();
 				return;
 			}
-			
+
 			commitSelectedItem(data);
 		}
 
 		//----------------------------------
 		//  damping
 		//----------------------------------
-		
+
 		private var _damping:Number;
-		
+
 		[Inspectable(category="General", enumeration="0,3,5,7,9", defaultValue="3")]
 		/**
-		 * 
-		 * @return 
-		 * 
-		 */		
+		 *
+		 * @return
+		 *
+		 */
 		public function get damping():Number
 		{
 			return _damping;
@@ -246,7 +250,7 @@ package com.visualempathy.display.controls.gallery
 		 *  Storage for the itemRenderer property.
 		 */
 		private var _itemRenderer:IFactory;
-		
+
 		protected var itemsSizeChanged:Boolean=false;
 		protected var rendererChanged:Boolean=false;
 
@@ -297,10 +301,10 @@ package com.visualempathy.display.controls.gallery
 		//----------------------------------
 		//  dataProvider
 		//----------------------------------
-		
+
 		protected var iterator:IViewCursor
 		protected var collectionIterator:IViewCursor;
-		
+
 		protected var collection:ICollectionView;
 
 		[Inspectable(category="Data")]
@@ -315,7 +319,7 @@ package com.visualempathy.display.controls.gallery
 			{
 				collection.removeEventListener(CollectionEvent.COLLECTION_CHANGE, collectionChangeHandler);
 			}
-			
+
 			if (value is Array)
 			{
 				collection=new ArrayCollection(value as Array);
@@ -348,61 +352,45 @@ package com.visualempathy.display.controls.gallery
 
 			iterator=collection.createCursor();
 			collectionIterator=collection.createCursor();
-			
+
 			collection.addEventListener(CollectionEvent.COLLECTION_CHANGE, collectionChangeHandler, false, 0, true);
-			
-			var event:CollectionEvent = new CollectionEvent(CollectionEvent.COLLECTION_CHANGE);
-			event.kind = CollectionEventKind.RESET;
+
+			var event:CollectionEvent=new CollectionEvent(CollectionEvent.COLLECTION_CHANGE);
+			event.kind=CollectionEventKind.RESET;
 			collectionChangeHandler(event);
 			dispatchEvent(event);
-			
+
 			thumbsNeedPositioning=true;
 			itemsNeedMeasurement=true;
 			invalidateProperties();
 			invalidateSize();
 			invalidateDisplayList();
 		}
-		
+
 		/**
 		 * ThumbScroller constructor
-		 * 
+		 *
 		 */
 		public function ThumbScroller()
 		{
-			selectedItem = null;
+			selectedItem=null;
 			itemRenderer=new ClassFactory(ListItemRenderer);
 			thumbWidth=85;
-			centerX=500;
+			selectedThumbTargetPositionX=500;
 			thumbRenderers=[];
 			_damping=3;
-			_canSelectWhileAnimating = true;
-			_selectionEnabled = true;
-			thumbsInitialized = false;
-			currentlyAnimating = false;
-			
-			addEventListener(FlexEvent.CREATION_COMPLETE, handleCreationComplete);
-			addEventListener(MouseEvent.CLICK, mouseClickHandler);
+			_canSelectWhileAnimating=true;
+			_selectionEnabled=true;
+			currentlyAnimating=false;
+
+			addEventListener(MouseEvent.CLICK, mouseClickHandler, false, 0, true);
 
 			invalidateProperties();
 		}
 
 		/**
-		 * We want to center the navigation once the component has finished 
-		 * the creation process. The first item in the dataProvider is moved to
-		 * the center position.
-		 *  
-		 * @param event
-		 * 
-		 */		
-		private function handleCreationComplete(event:Event):void
-		{
-			thumbsInitialized = true;
-			if(collection && collection.length > 0)
-			{
-				setPositions(false);
-			}
-		}
-
+		 *  @private
+		 */
 		override protected function measure():void
 		{
 			super.measure();
@@ -410,6 +398,9 @@ package com.visualempathy.display.controls.gallery
 			measuredWidth=thumbRenderers.length * thumbWidth;
 		}
 
+		/**
+		 *  @private
+		 */
 		override protected function createChildren():void
 		{
 			super.createChildren();
@@ -442,46 +433,58 @@ package com.visualempathy.display.controls.gallery
 			invalidateSize();
 		}
 
+		/**
+		 *  @private
+		 */
 		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
 		{
 			super.updateDisplayList(unscaledWidth, unscaledHeight);
 			var collectionHasItems:Boolean=(collection && collection.length > 0);
-			
+
 			if (rendererChanged)
 				purgeItemRenderers();
-			
+
 			adjustMask(unscaledWidth, unscaledHeight);
 			adjustContent(unscaledWidth, unscaledHeight);
 			adjustCenterTarget();
-			
+
 			if (collectionHasItems && thumbRenderers.length <= 0)
 				makeThumbs();
-			if(thumbsInitialized && thumbsNeedPositioning)
+			if (thumbsNeedPositioning)
 				setPositions(false);
 		}
-		
-		private function adjustCenterTarget():void
+
+		/**
+		 *  @private
+		 */
+		protected function adjustCenterTarget():void
 		{
-			if(collection)
-				centerX=(collection.length * thumbWidth) / 2;
+			if (collection)
+				selectedThumbTargetPositionX=(collection.length * thumbWidth) / 2;
 		}
-		
+
 		private function adjustMask(unscaledWidth:Number, unscaledHeight:Number):void
 		{
 			var mask:DisplayObject=maskShape;
 			mask.width=unscaledWidth;
 			mask.height=unscaledHeight;
 			mask.x=0;
-			mask.y=0;		
+			mask.y=0;
 		}
-		
-		private function adjustContent(unscaledWidth:Number, unscaledHeight:Number):void
+
+		/**
+		 *  @private
+		 */
+		protected function adjustContent(unscaledWidth:Number, unscaledHeight:Number):void
 		{
 			thumbContent.setActualSize(unscaledWidth, unscaledHeight);
-			if(collection)
+			if (collection)
 				thumbContent.x=width / 2 - (collection.length * thumbWidth) / 2
 		}
 
+		/**
+		 *  @private
+		 */
 		override protected function commitProperties():void
 		{
 			super.commitProperties();
@@ -669,8 +672,6 @@ package com.visualempathy.display.controls.gallery
 			return h;
 		}
 
-		[Inspectable(category="Data")]
-
 		/**
 		 *  @private
 		 */
@@ -696,7 +697,9 @@ package com.visualempathy.display.controls.gallery
 			return item;
 		}
 
-
+		/**
+		 *  @private
+		 */
 		protected function makeThumbs():void
 		{
 			var more:Boolean=true;
@@ -716,7 +719,7 @@ package com.visualempathy.display.controls.gallery
 				thumbRenderers.push(item);
 				count++;
 			}
-			selectedItem = collection[0];
+			selectedItem=collection[0];
 			selectedThumb=thumbRenderers[0]
 		}
 
@@ -724,7 +727,7 @@ package com.visualempathy.display.controls.gallery
 		 * Shifts the images to keep the continuous scroll continuous
 		 * @private
 		 */
-		private function swap():void
+		private function repositionThumbsAtLimits():void
 		{
 			var left:DisplayObject=thumbRenderers[0];
 			var right:DisplayObject=thumbRenderers[thumbRenderers.length - 1];
@@ -749,60 +752,61 @@ package com.visualempathy.display.controls.gallery
 
 			invalidateSize();
 		}
-		
+
 		/**
 		 * Moves the selected NavItem to the center of the navigation container.
 		 * @private
 		 */
-		private function centerNav():void
+		protected function moveSelectedThumbToCenter():void
 		{
-			if(!selectedThumb)
+			if (!selectedThumb)
 				return;
-			removeEnterFrameListener();
 			addEventListener(Event.ENTER_FRAME, handleEnterFrame);
 			thumbsNeedPositioning=false;
-			currentlyAnimating = true;
+			currentlyAnimating=true;
 		}
-		
+
+		/**
+		 *  @private
+		 */
 		private function handleEnterFrame(event:Event):void
 		{
 			setPositions();
 		}
 
 		/**
-		 * Set the positions of the NavItems
+		 * Set the positions of the item renderers
 		 * @param e
 		 * @private
 		 */
 		private function setPositions(animated:Boolean=true):void
 		{
-			trace("set set set");
-			var selectedThumbnail:DisplayObject = selectedThumb as DisplayObject;
-			var firstThumb:DisplayObject = thumbRenderers[0] as DisplayObject;
+			var selectedThumbnail:DisplayObject=selectedThumb as DisplayObject;
+			var firstThumb:DisplayObject=thumbRenderers[0] as DisplayObject;
 			var thisX:Number;
 			var deltaX:Number;
-			
-			if(!selectedThumbnail || !firstThumb)
+
+			if (!selectedThumbnail || !firstThumb)
 				removeEnterFrameListener();
-			
+
 			thisX=selectedThumbnail.x + thumbWidth;
-			deltaX=thisX - (centerX + thumbWidth / 2);
-			
-			if(animated)
+			deltaX=thisX - (selectedThumbTargetPositionX + thumbWidth / 2);
+
+			if (animated)
 				firstThumb.x-=deltaX / _damping;
 			else
 				firstThumb.x-=deltaX;
-			
+
 			alignThumbnails();
-			swap();
-			
+			repositionThumbsAtLimits();
+
 			if (Math.abs(deltaX) < 1)
 			{
 				removeEnterFrameListener();
-				currentlyAnimating = false;				
+				currentlyAnimating=false;
 			}
 		}
-		
+
 		private function removeEnterFrameListener():void
 		{
 			removeEventListener(Event.ENTER_FRAME, handleEnterFrame);
@@ -820,6 +824,9 @@ package com.visualempathy.display.controls.gallery
 			}
 		}
 
+		/**
+		 *  @private
+		 */
 		protected function purgeItemRenderers():void
 		{
 			rendererChanged=false;
@@ -831,6 +838,9 @@ package com.visualempathy.display.controls.gallery
 			}
 		}
 
+		/**
+		 *  @private
+		 */
 		public function createItemRenderer(data:Object):IListItemRenderer
 		{
 			var factory:IFactory;
@@ -851,6 +861,9 @@ package com.visualempathy.display.controls.gallery
 			return renderer;
 		}
 
+		/**
+		 *  @private
+		 */
 		public function getItemRendererFactory(data:Object):IFactory
 		{
 			if (data == null)
@@ -859,40 +872,49 @@ package com.visualempathy.display.controls.gallery
 			return itemRenderer;
 		}
 
+		/**
+		 *  @private
+		 */
 		protected function mouseClickHandler(event:MouseEvent):void
 		{
 			var item:IListItemRenderer=mouseEventToItemRenderer(event);
-			if (!item || !selectionEnabled || (currentlyAnimating&&!canSelectWhileAnimating))
+			if (!item || !selectionEnabled || (currentlyAnimating && !canSelectWhileAnimating))
 				return;
 
 			selectedItem=item.data;
-			centerNav();
+			moveSelectedThumbToCenter();
 		}
-		
+
+		/**
+		 *  @private
+		 */
 		private function commitSelectedItem(data:Object):void
 		{
 			clearSelected();
 			if (data == null)
 				return;
-			
-			for each(var thumbRenderer:IListItemRenderer in thumbRenderers)
+
+			for each (var thumbRenderer:IListItemRenderer in thumbRenderers)
 			{
-				if(thumbRenderer.data == data)
+				if (thumbRenderer.data == data)
 				{
-					_selectedItem = data;
-					selectedThumb = thumbRenderer;
+					_selectedItem=data;
+					selectedThumb=thumbRenderer;
 					break;
 				}
 			}
-			
+
 			dispatchEvent(new FlexEvent(FlexEvent.VALUE_COMMIT));
 		}
 
-		protected function clearSelected(transition:Boolean = false):void
+		/**
+		 *  @private
+		 */
+		protected function clearSelected():void
 		{
-			_selectedItem = null;
+			_selectedItem=null;
 		}
-		
+
 		protected function mouseEventToItemRenderer(event:MouseEvent):IListItemRenderer
 		{
 			var target:DisplayObject=DisplayObject(event.target);
@@ -914,7 +936,10 @@ package com.visualempathy.display.controls.gallery
 
 			return null;
 		}
-		
+
+		/**
+		 *  @private
+		 */
 		protected function collectionChangeHandler(event:Event):void
 		{
 			var len:int;
@@ -923,38 +948,38 @@ package com.visualempathy.display.controls.gallery
 			var data:ListBaseSelectionData;
 			var p:String;
 			var selectedUID:String;
-			
+
 			//TODO: Implement these handlers to update based on changes
 			//to the underlying data.
-			
+
 			if (event is CollectionEvent)
 			{
-				var ce:CollectionEvent = CollectionEvent(event);
-				
+				var ce:CollectionEvent=CollectionEvent(event);
+
 				if (ce.kind == CollectionEventKind.ADD)
 				{
 				}
-					
+
 				else if (ce.kind == CollectionEventKind.REPLACE)
 				{
 				}
-					
+
 				else if (ce.kind == CollectionEventKind.REMOVE)
 				{
-					
+
 					// trace("ListBase collectionEvent REMOVE", ce.location, verticalScrollPosition);
 					// make sure we've generated rows for the actual data
 					// at startup time we might just have blank rows
 				}
-					
+
 				else if (ce.kind == CollectionEventKind.MOVE)
 				{
 				}
-					
+
 				else if (ce.kind == CollectionEventKind.REFRESH)
 				{
 				}
-					
+
 				else if (ce.kind == CollectionEventKind.RESET)
 				{
 					// RemoveAll() on ArrayCollection currently triggers a reset
@@ -964,9 +989,9 @@ package com.visualempathy.display.controls.gallery
 				{
 				}
 			}
-			
-			itemsSizeChanged = true;
-			
+
+			itemsSizeChanged=true;
+
 			invalidateDisplayList();
 		}
 	}
