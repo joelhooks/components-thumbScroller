@@ -5,13 +5,15 @@
  */
 package com.visualempathy.display.controls.gallery
 {
+	import com.visualempathy.display.controls.gallery.events.ThumbScrollerEvent;
+	
 	import flash.display.DisplayObject;
 	import flash.display.Graphics;
 	import flash.display.Shape;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.utils.Dictionary;
-
+	
 	import mx.collections.ArrayCollection;
 	import mx.collections.CursorBookmark;
 	import mx.collections.ICollectionView;
@@ -23,7 +25,6 @@ package com.visualempathy.display.controls.gallery
 	import mx.collections.errors.ItemPendingError;
 	import mx.controls.listClasses.IListItemRenderer;
 	import mx.controls.listClasses.ListBaseSelectionData;
-	import mx.controls.listClasses.ListItemRenderer;
 	import mx.core.ClassFactory;
 	import mx.core.FlexShape;
 	import mx.core.FlexSprite;
@@ -38,6 +39,8 @@ package com.visualempathy.display.controls.gallery
 	import mx.events.FlexEvent;
 
 	use namespace mx_internal;
+	
+	[Event(name="thumbSelected", type="com.visualempathy.display.controls.gallery.events.ThumbScrollerEvent")]
 
 	/**
 	 * This is a continuous (infinite) thumbnail scroller.
@@ -58,7 +61,7 @@ package com.visualempathy.display.controls.gallery
 	 */
 	public class ThumbScroller extends UIComponent
 	{
-		[ArrayElementType("mx.controls.listClasses.IListItemRenderer")]
+		[ArrayElementType("import mx.core.IDataRenderer")]
 		protected var thumbRenderers:Array;
 		
 		protected var selectedThumbTargetPositionX:Number
@@ -72,6 +75,24 @@ package com.visualempathy.display.controls.gallery
 		protected var thumbsNeedPositioning:Boolean;
 		protected var currentlyAnimating:Boolean;
 
+		//----------------------------------
+		//  selectFirstOnLoad
+		//----------------------------------
+		
+		[Inspectable(category="General")]
+		private var _selectFirstOnLoad:Boolean;
+
+		public function get selectFirstOnLoad():Boolean
+		{
+			return _selectFirstOnLoad;
+		}
+
+		public function set selectFirstOnLoad(value:Boolean):void
+		{
+			_selectFirstOnLoad = value;
+		}
+
+		
 		//----------------------------------
 		//  selectionEnabled
 		//----------------------------------
@@ -213,6 +234,7 @@ package com.visualempathy.display.controls.gallery
 				selectedItemChanged=true;
 
 				invalidateDisplayList();
+				dispatchEvent(new ThumbScrollerEvent(ThumbScrollerEvent.THUMB_SELECTED, data));
 				return;
 			}
 
@@ -374,13 +396,14 @@ package com.visualempathy.display.controls.gallery
 		public function ThumbScroller()
 		{
 			selectedItem=null;
-			itemRenderer=new ClassFactory(ListItemRenderer);
+			itemRenderer=new ClassFactory(DefaultThumbRenderer);
 			thumbWidth=85;
 			selectedThumbTargetPositionX=500;
 			thumbRenderers=[];
 			_damping=3;
 			_canSelectWhileAnimating=true;
 			_selectionEnabled=true;
+			_selectFirstOnLoad=true;
 			currentlyAnimating=false;
 
 			addEventListener(MouseEvent.CLICK, mouseClickHandler, false, 0, true);
@@ -497,9 +520,7 @@ package com.visualempathy.display.controls.gallery
 				{
 					if (iterator)
 					{
-						// trace("calculate height " + index + " " + count);
 						var item:IListItemRenderer=getMeasuringRenderer(iterator.current);
-
 						var ww:Number=85;
 						if (thumbContent.width)
 							ww=thumbContent.width;
@@ -509,7 +530,6 @@ package com.visualempathy.display.controls.gallery
 
 						var th:int=item.getExplicitOrMeasuredHeight();
 
-						// unless specified otherwise, thumbheight defaults to 85
 						setThumbHeight(Math.max(th, 85));
 					}
 					else
@@ -543,7 +563,6 @@ package com.visualempathy.display.controls.gallery
 			if (count == 0)
 				count=(collection) ? collection.length : 0;
 
-			// if empty collection, don't measure anything
 			if (collection && collection.length == 0)
 				count=0;
 
@@ -560,7 +579,6 @@ package com.visualempathy.display.controls.gallery
 				}
 				catch (e:ItemPendingError)
 				{
-					// even the first item isn't paged in
 					return 0;
 				}
 
@@ -580,7 +598,7 @@ package com.visualempathy.display.controls.gallery
 						item=getMeasuringRenderer(data);
 					}
 
-					item.explicitWidth=NaN; // gets set in measureHeightOfItems
+					item.explicitWidth=NaN; 
 					setupRendererFromData(item, data);
 
 					rw=item.measuredWidth;
@@ -595,7 +613,6 @@ package com.visualempathy.display.controls.gallery
 					}
 					catch (e:ItemPendingError)
 					{
-						// if we run out of data, assume all remaining rows are the size of the previous row
 						more=false;
 					}
 				}
@@ -644,7 +661,6 @@ package com.visualempathy.display.controls.gallery
 					th=thumbHeight;
 					data=iterator.current;
 
-					// trace("calculate height " + index + " " + count);
 					var item:IListItemRenderer=getMeasuringRenderer(data);
 					item.explicitWidth=ww;
 
@@ -660,7 +676,6 @@ package com.visualempathy.display.controls.gallery
 					}
 					catch (e:ItemPendingError)
 					{
-						// if we run out of data, assume all remaining rows are the size of the previous row
 						more=false;
 					}
 				}
@@ -719,8 +734,12 @@ package com.visualempathy.display.controls.gallery
 				thumbRenderers.push(item);
 				count++;
 			}
-			selectedItem=collection[0];
-			selectedThumb=thumbRenderers[0]
+			
+			if(selectFirstOnLoad)
+			{
+				selectedItem=collection[0];
+				selectedThumb=thumbRenderers[0]
+			}
 		}
 
 		/**
@@ -785,9 +804,15 @@ package com.visualempathy.display.controls.gallery
 			var firstThumb:DisplayObject=thumbRenderers[0] as DisplayObject;
 			var thisX:Number;
 			var deltaX:Number;
+			
+			if(!selectedItem)
+				return;
 
 			if (!selectedThumbnail || !firstThumb)
+			{
 				removeEnterFrameListener();
+				return;
+			}
 
 			thisX=selectedThumbnail.x + thumbWidth;
 			deltaX=thisX - (selectedThumbTargetPositionX + thumbWidth / 2);
@@ -900,6 +925,7 @@ package com.visualempathy.display.controls.gallery
 				{
 					_selectedItem=data;
 					selectedThumb=thumbRenderer;
+					dispatchEvent(new ThumbScrollerEvent(ThumbScrollerEvent.THUMB_SELECTED, data));
 					break;
 				}
 			}
@@ -966,10 +992,6 @@ package com.visualempathy.display.controls.gallery
 
 				else if (ce.kind == CollectionEventKind.REMOVE)
 				{
-
-					// trace("ListBase collectionEvent REMOVE", ce.location, verticalScrollPosition);
-					// make sure we've generated rows for the actual data
-					// at startup time we might just have blank rows
 				}
 
 				else if (ce.kind == CollectionEventKind.MOVE)

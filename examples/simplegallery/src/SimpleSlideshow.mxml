@@ -10,6 +10,8 @@
 				creationComplete="application1_creationCompleteHandler(event)">
 	<mx:Script>
 		<![CDATA[
+			import com.visualempathy.display.controls.gallery.events.ThumbScrollerEvent;
+			
 			import mx.collections.XMLListCollection;
 			import mx.events.FlexEvent;
 
@@ -45,6 +47,13 @@
 			{
 				navigateToURL(new URLRequest("http://joelhooks.com"), "_blank");
 			}
+
+			protected function scroller_thumbSelectedHandler(event:ThumbScrollerEvent):void
+			{
+				if(event.data is XML && event.data.@name)
+					image.source = 'assets/images/' + event.data.@name + '.jpg';
+			}
+
 		]]>
 	</mx:Script>
 	<mx:VBox height="100%"
@@ -59,12 +68,11 @@
 				  color="#000000"
 				  fontSize="18"
 				  fontWeight="bold"/>
-		<display:ImageSwap height="100%"
-						   width="100%"
-						   source="{'assets/images/' + (scroller.selectedItem ? scroller.selectedItem.@name : null) + '.jpg'}"/>
+		<display:ImageSwap id="image" height="100%"
+						   width="100%"/>
 		<gallery:ThumbScroller id="scroller"
-							   width="100%"
-							   height="85"
+							   width="100%" selectFirstOnLoad="false"
+							   height="85" thumbSelected="scroller_thumbSelectedHandler(event)"
 							   itemRenderer="ThumbRenderer"
 							   canSelectWhileAnimating="false"
 							   dataProvider="{dp}"/>

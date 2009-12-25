@@ -32,4 +32,5 @@ doc/*
 src/FlexUnitApplication.mxml
 .settings/*
 bin-debug
+bin-release
 

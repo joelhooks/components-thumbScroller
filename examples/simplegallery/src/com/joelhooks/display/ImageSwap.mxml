@@ -61,7 +61,13 @@
 				var loaderContext:LoaderContext = new LoaderContext(true);
 				loader = new Loader()
 				loader.load(request,loaderContext);
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, handleImageComplete)
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, handleImageComplete);
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, handleIOError);
+			}
+			
+			private function handleIOError(event:IOErrorEvent):void
+			{
+				trace("boooo");
 			}
 			
 			private function handleImageComplete(event:Event):void
