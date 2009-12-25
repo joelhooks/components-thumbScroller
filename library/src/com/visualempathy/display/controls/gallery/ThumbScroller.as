@@ -62,6 +62,45 @@ package com.visualempathy.display.controls.gallery
 		protected var itemsNeedMeasurement:Boolean=true;
 		protected var explicitThumbHeight:Number;
 		protected var explicitThumbWidth:Number;
+		protected var thumbsInitialized:Boolean;
+		protected var thumbsNeedPositioning:Boolean;
+		protected var currentlyAnimating:Boolean;
+	
+		//----------------------------------
+		//  selectionEnabled
+		//----------------------------------
+		
+		private var _selectionEnabled:Boolean;
+
+		[Inspectable(category="General")]
+		public function get selectionEnabled():Boolean
+		{
+			return _selectionEnabled;
+		}
+
+		public function set selectionEnabled(value:Boolean):void
+		{
+			_selectionEnabled = value;
+		}
+
+
+		//----------------------------------
+		//  canSelectWhileAnimating
+		//----------------------------------
+		
+		private var _canSelectWhileAnimating:Boolean;
+
+		[Inspectable(category="General")]
+		public function get canSelectWhileAnimating():Boolean
+		{
+			return _canSelectWhileAnimating;
+		}
+
+		public function set canSelectWhileAnimating(value:Boolean):void
+		{
+			_canSelectWhileAnimating = value;
+		}
+
 
 		//----------------------------------
 		//  thumbHeight
@@ -69,7 +108,7 @@ package com.visualempathy.display.controls.gallery
 		
 		private var _thumbHeight:Number;
 
-		[Inspectable(category="Data")]
+		[Inspectable(category="General")]
 		public function get thumbHeight():Number
 		{
 			return _thumbHeight;
@@ -104,7 +143,7 @@ package com.visualempathy.display.controls.gallery
 
 		private var thumbWidthChanged:Boolean=false;
 
-		[Inspectable(category="Data")]
+		[Inspectable(category="General")]
 		public function get thumbWidth():Number
 		{
 			return _thumbWidth;
@@ -182,7 +221,12 @@ package com.visualempathy.display.controls.gallery
 		
 		private var _damping:Number;
 		
-		[Inspectable(category="Data")]
+		[Inspectable(category="General", enumeration="0,3,5,7,9", defaultValue="3")]
+		/**
+		 * 
+		 * @return 
+		 * 
+		 */		
 		public function get damping():Number
 		{
 			return _damping;
@@ -303,7 +347,7 @@ package com.visualempathy.display.controls.gallery
 			}
 
 			iterator=collection.createCursor();
-			collectionIterator=collection.createCursor(); //IViewCursor(collection);
+			collectionIterator=collection.createCursor();
 			
 			collection.addEventListener(CollectionEvent.COLLECTION_CHANGE, collectionChangeHandler, false, 0, true);
 			
@@ -311,7 +355,8 @@ package com.visualempathy.display.controls.gallery
 			event.kind = CollectionEventKind.RESET;
 			collectionChangeHandler(event);
 			dispatchEvent(event);
-
+			
+			thumbsNeedPositioning=true;
 			itemsNeedMeasurement=true;
 			invalidateProperties();
 			invalidateSize();
@@ -329,7 +374,12 @@ package com.visualempathy.display.controls.gallery
 			thumbWidth=85;
 			centerX=500;
 			thumbRenderers=[];
-			_damping=10;
+			_damping=3;
+			_canSelectWhileAnimating = true;
+			_selectionEnabled = true;
+			thumbsInitialized = false;
+			currentlyAnimating = false;
+			
 			addEventListener(FlexEvent.CREATION_COMPLETE, handleCreationComplete);
 			addEventListener(MouseEvent.CLICK, mouseClickHandler);
 
@@ -346,7 +396,11 @@ package com.visualempathy.display.controls.gallery
 		 */		
 		private function handleCreationComplete(event:Event):void
 		{
-			centerNav();
+			thumbsInitialized = true;
+			if(collection && collection.length > 0)
+			{
+				setPositions(false);
+			}
 		}
 
 		override protected function measure():void
@@ -402,11 +456,14 @@ package com.visualempathy.display.controls.gallery
 			
 			if (collectionHasItems && thumbRenderers.length <= 0)
 				makeThumbs();
+			if(thumbsInitialized && thumbsNeedPositioning)
+				setPositions(false);
 		}
 		
 		private function adjustCenterTarget():void
 		{
-			centerX=(collection.length * thumbWidth) / 2;
+			if(collection)
+				centerX=(collection.length * thumbWidth) / 2;
 		}
 		
 		private function adjustMask(unscaledWidth:Number, unscaledHeight:Number):void
@@ -421,7 +478,8 @@ package com.visualempathy.display.controls.gallery
 		private function adjustContent(unscaledWidth:Number, unscaledHeight:Number):void
 		{
 			thumbContent.setActualSize(unscaledWidth, unscaledHeight);
-			thumbContent.x=width / 2 - (collection.length * thumbWidth) / 2
+			if(collection)
+				thumbContent.x=width / 2 - (collection.length * thumbWidth) / 2
 		}
 
 		override protected function commitProperties():void
@@ -638,36 +696,6 @@ package com.visualempathy.display.controls.gallery
 			return item;
 		}
 
-		/**
-		 * Shifts the images to keep the continuous scroll continuous
-		 * @private
-		 */
-		private function swap():void
-		{
-			alignThumbnails();
-			var left:DisplayObject=thumbRenderers[0];
-			var right:DisplayObject=thumbRenderers[thumbRenderers.length - 1];
-
-			for (var i:int=0; i < thumbRenderers.length; i++)
-			{
-
-				if (left.x < 0 - thumbWidth / 2)
-				{
-					// moves clips from first to last
-					thumbRenderers.push(thumbRenderers.shift());
-					left.x=right.x + thumbWidth;
-				}
-
-				if (right.x > thumbWidth * thumbRenderers.length - thumbWidth / 2)
-				{
-					// moves clips from last to first
-					thumbRenderers.unshift(thumbRenderers.pop());
-					right.x=left.x - thumbWidth;
-				}
-			}
-
-			invalidateSize();
-		}
 
 		protected function makeThumbs():void
 		{
@@ -693,6 +721,36 @@ package com.visualempathy.display.controls.gallery
 		}
 
 		/**
+		 * Shifts the images to keep the continuous scroll continuous
+		 * @private
+		 */
+		private function swap():void
+		{
+			var left:DisplayObject=thumbRenderers[0];
+			var right:DisplayObject=thumbRenderers[thumbRenderers.length - 1];
+
+			for (var i:int=0; i < thumbRenderers.length; i++)
+			{
+
+				if (left.x < 0 - thumbWidth / 2)
+				{
+					// moves clips from first to last
+					thumbRenderers.push(thumbRenderers.shift());
+					left.x=right.x + thumbWidth;
+				}
+
+				if (right.x > thumbWidth * thumbRenderers.length - thumbWidth / 2)
+				{
+					// moves clips from last to first
+					thumbRenderers.unshift(thumbRenderers.pop());
+					right.x=left.x - thumbWidth;
+				}
+			}
+
+			invalidateSize();
+		}
+		
+		/**
 		 * Moves the selected NavItem to the center of the navigation container.
 		 * @private
 		 */
@@ -700,12 +758,15 @@ package com.visualempathy.display.controls.gallery
 		{
 			if(!selectedThumb)
 				return;
-			removeEventListener(Event.ENTER_FRAME, setPositions);
-			for (var i:int=0; i < thumbRenderers.length; i++)
-			{
-				//TODO: ENable and disable selected/unselected nav items
-			}
-			addEventListener(Event.ENTER_FRAME, setPositions);
+			removeEnterFrameListener();
+			addEventListener(Event.ENTER_FRAME, handleEnterFrame);
+			thumbsNeedPositioning=false;
+			currentlyAnimating = true;
+		}
+		
+		private function handleEnterFrame(event:Event):void
+		{
+			setPositions();
 		}
 
 		/**
@@ -713,16 +774,38 @@ package com.visualempathy.display.controls.gallery
 		 * @param e
 		 * @private
 		 */
-		private function setPositions(e:Event=null):void
+		private function setPositions(animated:Boolean=true):void
 		{
-			var thisX:Number=DisplayObject(selectedThumb).x + thumbWidth;
-			var deltaX:Number=thisX - (centerX + thumbWidth / 2);
-			DisplayObject(thumbRenderers[0]).x-=deltaX / _damping;
+			trace("set set set");
+			var selectedThumbnail:DisplayObject = selectedThumb as DisplayObject;
+			var firstThumb:DisplayObject = thumbRenderers[0] as DisplayObject;
+			var thisX:Number;
+			var deltaX:Number;
+			
+			if(!selectedThumbnail || !firstThumb)
+				removeEnterFrameListener();
+			
+			thisX=selectedThumbnail.x + thumbWidth;
+			deltaX=thisX - (centerX + thumbWidth / 2);
+			
+			if(animated)
+				firstThumb.x-=deltaX / _damping;
+			else
+				firstThumb.x-=deltaX;
+			
+			alignThumbnails();
 			swap();
+			
 			if (Math.abs(deltaX) < 1)
 			{
-				removeEventListener(Event.ENTER_FRAME, setPositions);
+				removeEnterFrameListener();
+				currentlyAnimating = false;				
 			}
+		}
+		
+		private function removeEnterFrameListener():void
+		{
+			removeEventListener(Event.ENTER_FRAME, handleEnterFrame);
 		}
 
 		/**
@@ -779,7 +862,7 @@ package com.visualempathy.display.controls.gallery
 		protected function mouseClickHandler(event:MouseEvent):void
 		{
 			var item:IListItemRenderer=mouseEventToItemRenderer(event);
-			if (!item)
+			if (!item || !selectionEnabled || (currentlyAnimating&&!canSelectWhileAnimating))
 				return;
 
 			selectedItem=item.data;

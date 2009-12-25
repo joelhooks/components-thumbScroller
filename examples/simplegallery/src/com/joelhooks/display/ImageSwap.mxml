@@ -82,13 +82,13 @@
 				this.imageContainer.addChild(image)
 				this.loadedImages.push(image);
 				image.validateNow();
-				TweenLite.to(this.loadedImages[0], 1, {alpha:0, onComplete:removeOldImage})
-				TweenLite.to(image, 1, {alpha:1, onComplete:removePreload});				
+				TweenLite.to(this.loadedImages[0], .5, {alpha:0, onComplete:removeOldImage})
+				TweenLite.to(image, .5, {alpha:1, onComplete:removePreload});				
 			}
 			
 			private function removeOldImage():void
 			{
-				if(this.loadedImages.length > 1)
+				while(this.loadedImages.length > 1)
 				{
 					this.imageContainer.removeChildAt(0)
 					this.loadedImages.shift();
