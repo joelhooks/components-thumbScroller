@@ -71,7 +71,7 @@
 		<display:ImageSwap id="image" height="100%"
 						   width="100%"/>
 		<gallery:ThumbScroller id="scroller"
-							   width="100%" selectFirstOnLoad="false"
+							   width="100%" selectFirstOnLoad="true"
 							   height="85" thumbSelected="scroller_thumbSelectedHandler(event)"
 							   itemRenderer="ThumbRenderer"
 							   canSelectWhileAnimating="false"

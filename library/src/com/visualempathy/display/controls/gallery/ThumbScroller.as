@@ -447,8 +447,16 @@ package com.visualempathy.display.controls.gallery
 			currentlyAnimating=false;
 
 			addEventListener(MouseEvent.CLICK, mouseClickHandler, false, 0, true);
+			addEventListener(FlexEvent.CREATION_COMPLETE, handleCreationComplete, false, 0, true);
 
 			invalidateProperties();
+		}
+		
+		private function handleCreationComplete(event:FlexEvent):void
+		{
+			removeEventListener(FlexEvent.CREATION_COMPLETE, handleCreationComplete);
+			if(selectFirstOnLoad)
+				moveSelectedThumbToCenter();
 		}
 
 		/**
@@ -514,7 +522,7 @@ package com.visualempathy.display.controls.gallery
 			if (collectionHasItems && thumbRenderers.length <= 0)
 				makeThumbs();
 			if (thumbsNeedPositioning)
-				setPositions(false);
+				moveSelectedThumbToCenter();
 		}
 
 		/**
@@ -528,10 +536,25 @@ package com.visualempathy.display.controls.gallery
 
 		protected function adjustMask(unscaledWidth:Number, unscaledHeight:Number):void
 		{
+			trace(unscaledWidth, unscaledHeight);
 			var mask:DisplayObject=maskShape;
-			mask.width=unscaledWidth;
+			var maskWidth:Number;
+			var maskX:Number;
+			
+			if(thumbRenderers.length > 4)
+			{
+				maskWidth = thumbWidth * thumbRenderers.length - thumbWidth * 2
+				maskX = thumbContent.x + thumbWidth
+			}
+			else
+			{
+				maskWidth = thumbWidth * thumbRenderers.length;
+				maskX = thumbContent.x;			
+			}
+			
+			mask.width=maskWidth;
 			mask.height=unscaledHeight;
-			mask.x=0;
+			mask.x=maskX;
 			mask.y=0;
 		}
 
@@ -794,14 +817,14 @@ package com.visualempathy.display.controls.gallery
 			for (var i:int=0; i < thumbRenderers.length; i++)
 			{
 
-				if (left.x < 0 - thumbWidth / 2)
+				if (left.x < 0 - thumbWidth / 4 )
 				{
 					// moves clips from first to last
 					thumbRenderers.push(thumbRenderers.shift());
 					left.x=right.x + thumbWidth;
 				}
 
-				if (right.x > thumbWidth * thumbRenderers.length - thumbWidth / 2)
+				if (right.x > thumbWidth * thumbRenderers.length - thumbWidth / 8 )
 				{
 					// moves clips from last to first
 					thumbRenderers.unshift(thumbRenderers.pop());
